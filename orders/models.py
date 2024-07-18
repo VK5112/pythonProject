@@ -25,7 +25,7 @@ def create_user_profile(instance, created, **kwargs):
     if created:
         UserProfile.objects.create(
             user=instance,
-            role='manager',
+            role='manager',  # Default role
             username=instance.username,
             first_name=instance.first_name,
             last_name=instance.last_name,
@@ -54,6 +54,8 @@ class OrderModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     utm = models.CharField(max_length=120)
     msg = models.CharField(max_length=120)
+    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+    group = models.CharField(max_length=120, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} {self.surname}"

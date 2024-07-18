@@ -31,6 +31,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    manager = serializers.SlugRelatedField(slug_field='username', queryset=User.objects.all(), allow_null=True, required=False)
+
     class Meta:
         model = OrderModel
         fields = '__all__'
@@ -63,7 +65,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         }
 
         data.update(user_data)
-
         access = data.pop('access')
         refresh = data.pop('refresh')
         data['access'] = access
