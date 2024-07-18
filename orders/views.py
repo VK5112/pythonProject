@@ -8,6 +8,7 @@ from rest_framework.viewsets import ModelViewSet
 from .models import OrderModel
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.filters import OrderingFilter
 
 
 class RegisterView(generics.CreateAPIView):
@@ -42,6 +43,9 @@ class OrderModelViewSet(ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = OrderPagination
+    filter_backends = [OrderingFilter]
+    ordering_fields = '__all__'
+    ordering = ['-id']
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
