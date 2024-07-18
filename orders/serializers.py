@@ -31,11 +31,24 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    manager = serializers.SlugRelatedField(slug_field='username', queryset=User.objects.all(), allow_null=True, required=False)
+    manager_username = serializers.CharField(source='manager.username', read_only=True)
+    manager = serializers.SlugRelatedField(slug_field='username', queryset=User.objects.all(), write_only=True, allow_null=True, required=False)
 
     class Meta:
         model = OrderModel
         fields = '__all__'
+
+    def create(self, validated_data):
+        manager_username = validated_data.pop('manager', None)
+        if manager_username:
+            validated_data['manager_username'] = manager_username.username
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        manager_username = validated_data.pop('manager', None)
+        if manager_username:
+            validated_data['manager_username'] = manager_username.username
+        return super().update(instance, validated_data)
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
