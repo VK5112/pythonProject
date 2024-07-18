@@ -1,44 +1,48 @@
-from rest_framework import viewsets, permissions, generics
-from rest_framework.pagination import PageNumberPagination
+from rest_framework import generics, permissions
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import status
 from django.contrib.auth.models import User
-from django.contrib.auth.password_validation import validate_password
-from rest_framework import serializers
+from .models import UserProfile
+from .serializers import UserSerializer, OrderSerializer, CustomTokenObtainPairSerializer
+from rest_framework.viewsets import ModelViewSet
 from .models import OrderModel
-from .serializers import OrderSerializer
-
-
-class OrderModelPagination(PageNumberPagination):
-    page_size = 25
-
-
-class OrderModelViewSet(viewsets.ModelViewSet):
-    queryset = OrderModel.objects.all().order_by('-id')
-    serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    pagination_class = OrderModelPagination
-
-
-class RegisterSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('username', 'password', 'email', 'first_name', 'last_name')
-        extra_kwargs = {'password': {'write_only': True}}
-
-    def create(self, validated_data):
-        user = User.objects.create(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name']
-        )
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.pagination import PageNumberPagination
 
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
-    permission_classes = (permissions.AllowAny,)
-    serializer_class = RegisterSerializer
+    serializer_class = UserSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        UserProfile.objects.update_or_create(
+            user=user,
+            defaults={
+                'role': 'manager',
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name
+            }
+        )
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class OrderPagination(PageNumberPagination):
+    page_size = 25
+
+
+class OrderModelViewSet(ModelViewSet):
+    queryset = OrderModel.objects.all().order_by('-id')
+    serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = OrderPagination
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
