@@ -14,5 +14,5 @@ urlpatterns = [
     path('auth/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('comments/', CommentCreateView.as_view(), name='comment_create'),
-    path('orders/comments/<int:order_id>/', CommentListView.as_view(), name='order_comments'),
+    path('comments/<int:order_id>/', CommentListView.as_view(), name='order_comments'),
 ]
