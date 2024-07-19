@@ -54,7 +54,7 @@ class OrderModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     utm = models.CharField(max_length=120)
     msg = models.CharField(max_length=120)
-    manager_username = models.CharField(max_length=150, blank=True, null=True)
+    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     group = models.CharField(max_length=120, blank=True, null=True)
 
     def __str__(self):
