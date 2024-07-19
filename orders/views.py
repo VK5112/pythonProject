@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from .models import UserProfile, OrderModel, Comment
@@ -7,6 +7,8 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import OrderingFilter
+from rest_framework.generics import ListAPIView
+
 
 class CommentCreateView(generics.CreateAPIView):
     serializer_class = CommentSerializer
@@ -22,6 +24,7 @@ class CommentCreateView(generics.CreateAPIView):
             serializer.save(user=self.request.user)
         else:
             raise serializers.ValidationError('You cannot comment on this order.')
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -45,8 +48,10 @@ class RegisterView(generics.CreateAPIView):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+
 class OrderPagination(PageNumberPagination):
     page_size = 25
+
 
 class OrderModelViewSet(ModelViewSet):
     queryset = OrderModel.objects.all().order_by('-id')
@@ -57,5 +62,15 @@ class OrderModelViewSet(ModelViewSet):
     ordering_fields = '__all__'
     ordering = ['-id']
 
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+
+class CommentListView(ListAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        order_id = self.kwargs['order_id']
+        return Comment.objects.filter(order_id=order_id).order_by('-created_at')
