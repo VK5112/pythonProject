@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 
 class UserProfile(models.Model):
@@ -40,6 +41,13 @@ def save_user_profile(instance, **kwargs):
     instance.userprofile.save()
 
 
+class Comment(models.Model):
+    order = models.ForeignKey('OrderModel', related_name='comments', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    created_at = models.DateTimeField(default=timezone.now)
+
+
 class OrderModel(models.Model):
     name = models.CharField(max_length=120)
     surname = models.CharField(max_length=120)
@@ -55,6 +63,7 @@ class OrderModel(models.Model):
     utm = models.CharField(max_length=120)
     msg = models.CharField(max_length=120)
     manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(max_length=20, null=True, blank=True)
     group = models.CharField(max_length=120, blank=True, null=True)
 
     def __str__(self):

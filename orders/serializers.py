@@ -1,7 +1,38 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile, OrderModel
+from .models import UserProfile, OrderModel, Comment
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'user', 'text', 'created_at', 'order']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    manager_username = serializers.CharField(source='manager.username', read_only=True)
+    manager = serializers.SlugRelatedField(slug_field='username', queryset=User.objects.all(), write_only=True,
+                                           allow_null=True, required=False)
+    comments = CommentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = OrderModel
+        fields = '__all__'
+
+    def create(self, validated_data):
+        manager_username = validated_data.pop('manager', None)
+        if manager_username:
+            validated_data['manager_username'] = manager_username.username
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        manager_username = validated_data.pop('manager', None)
+        if manager_username:
+            validated_data['manager_username'] = manager_username.username
+        return super().update(instance, validated_data)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -28,27 +59,6 @@ class UserSerializer(serializers.ModelSerializer):
             }
         )
         return user
-
-
-class OrderSerializer(serializers.ModelSerializer):
-    manager_username = serializers.CharField(source='manager.username', read_only=True)
-    manager = serializers.SlugRelatedField(slug_field='username', queryset=User.objects.all(), write_only=True, allow_null=True, required=False)
-
-    class Meta:
-        model = OrderModel
-        fields = '__all__'
-
-    def create(self, validated_data):
-        manager_username = validated_data.pop('manager', None)
-        if manager_username:
-            validated_data['manager_username'] = manager_username.username
-        return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        manager_username = validated_data.pop('manager', None)
-        if manager_username:
-            validated_data['manager_username'] = manager_username.username
-        return super().update(instance, validated_data)
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
