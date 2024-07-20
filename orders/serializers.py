@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile, OrderModel, Comment
+from .models import UserProfile, OrderModel, Comment, Group
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-STATUS_CHOICES = ['In work', 'New', 'Aggre', 'Disaggre', 'Dubbing']
+STATUS_CHOICES = ['In work', 'New', 'Agree', 'Disagree', 'Dubbing']
 COURSE_CHOICES = ['FS', 'QACX', 'JCX', 'JSCX', 'FE', 'PCX']
 COURSE_TYPE_CHOICES = ['pro', 'minimal', 'premium', 'incubator', 'vip']
 COURSE_FORMAT_CHOICES = ['static', 'online']
@@ -124,3 +124,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['refresh'] = refresh
 
         return data
+
+
+class GroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = ['id', 'name']
+
+    @staticmethod
+    def validate_name(value):
+        if Group.objects.filter(name=value).exists():
+            raise serializers.ValidationError("Group with this name already exists.")
+        return value

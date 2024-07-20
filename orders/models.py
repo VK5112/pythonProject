@@ -5,7 +5,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
-STATUS_CHOICES = ['In work', 'New', 'Aggre', 'Disaggre', 'Dubbing']
+STATUS_CHOICES = ['In work', 'New', 'Agree', 'Disagree', 'Dubbing']
 COURSE_CHOICES = ['FS', 'QACX', 'JCX', 'JSCX', 'FE', 'PCX']
 COURSE_TYPE_CHOICES = ['pro', 'minimal', 'premium', 'incubator', 'vip']
 COURSE_FORMAT_CHOICES = ['static', 'online']
@@ -52,6 +52,13 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     created_at = models.DateTimeField(default=timezone.now)
+
+
+class Group(models.Model):
+    name = models.CharField(max_length=120, unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class OrderModel(models.Model):
