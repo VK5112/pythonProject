@@ -3,6 +3,11 @@ from django.contrib.auth.models import User
 from .models import UserProfile, OrderModel, Comment
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+STATUS_CHOICES = ['In work', 'New', 'Aggre', 'Disaggre', 'Dubbing']
+COURSE_CHOICES = ['FS', 'QACX', 'JCX', 'JSCX', 'FE', 'PCX']
+COURSE_TYPE_CHOICES = ['pro', 'minimal', 'premium', 'incubator', 'vip']
+COURSE_FORMAT_CHOICES = ['static', 'online']
+
 
 class CommentSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='user.username')
@@ -32,7 +37,32 @@ class OrderSerializer(serializers.ModelSerializer):
         manager_username = validated_data.pop('manager', None)
         if manager_username:
             validated_data['manager_username'] = manager_username.username
+            instance.manager = User.objects.get(username=manager_username.username)
         return super().update(instance, validated_data)
+
+    @staticmethod
+    def validate_status(value):
+        if value and value not in STATUS_CHOICES:
+            raise serializers.ValidationError(f'Status must be one of {STATUS_CHOICES}')
+        return value
+
+    @staticmethod
+    def validate_course(value):
+        if value not in COURSE_CHOICES:
+            raise serializers.ValidationError(f'Course must be one of {COURSE_CHOICES}')
+        return value
+
+    @staticmethod
+    def validate_course_format(value):
+        if value not in COURSE_FORMAT_CHOICES:
+            raise serializers.ValidationError(f'Course format must be one of {COURSE_FORMAT_CHOICES}')
+        return value
+
+    @staticmethod
+    def validate_course_type(value):
+        if value not in COURSE_TYPE_CHOICES:
+            raise serializers.ValidationError(f'Course type must be one of {COURSE_TYPE_CHOICES}')
+        return value
 
 
 class UserSerializer(serializers.ModelSerializer):

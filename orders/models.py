@@ -3,6 +3,12 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+
+STATUS_CHOICES = ['In work', 'New', 'Aggre', 'Disaggre', 'Dubbing']
+COURSE_CHOICES = ['FS', 'QACX', 'JCX', 'JSCX', 'FE', 'PCX']
+COURSE_TYPE_CHOICES = ['pro', 'minimal', 'premium', 'incubator', 'vip']
+COURSE_FORMAT_CHOICES = ['static', 'online']
 
 
 class UserProfile(models.Model):
@@ -58,13 +64,27 @@ class OrderModel(models.Model):
     course_format = models.CharField(max_length=120)
     course_type = models.CharField(max_length=120)
     sum = models.IntegerField()
-    alreadyPaid = models.BooleanField(default=False)
+    alreadyPaid = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     utm = models.CharField(max_length=120)
     msg = models.CharField(max_length=120)
     manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=20, null=True, blank=True)
     group = models.CharField(max_length=120, blank=True, null=True)
+
+    def clean(self):
+        if self.status and self.status not in STATUS_CHOICES:
+            raise ValidationError(f'Status must be one of {STATUS_CHOICES}')
+        if self.course not in COURSE_CHOICES:
+            raise ValidationError(f'Course must be one of {COURSE_CHOICES}')
+        if self.course_format not in COURSE_FORMAT_CHOICES:
+            raise ValidationError(f'Course format must be one of {COURSE_FORMAT_CHOICES}')
+        if self.course_type not in COURSE_TYPE_CHOICES:
+            raise ValidationError(f'Course type must be one of {COURSE_TYPE_CHOICES}')
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super(OrderModel, self).save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} {self.surname}"

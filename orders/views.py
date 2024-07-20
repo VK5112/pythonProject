@@ -8,6 +8,14 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import OrderingFilter
 from rest_framework.generics import ListAPIView
+from rest_framework.decorators import action
+
+
+class IsOrderManagerOrReadOnly(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj.manager is None or obj.manager == request.user
 
 
 class CommentCreateView(generics.CreateAPIView):
@@ -56,11 +64,39 @@ class OrderPagination(PageNumberPagination):
 class OrderModelViewSet(ModelViewSet):
     queryset = OrderModel.objects.all().order_by('-id')
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOrderManagerOrReadOnly]
     pagination_class = OrderPagination
     filter_backends = [OrderingFilter]
     ordering_fields = '__all__'
     ordering = ['-id']
+
+    @action(detail=True, methods=['post'])
+    def add_group(self, request, pk=None):
+        order = self.get_object()
+        group = request.data.get('group')
+        if group:
+            order.group = group
+            order.save()
+            return Response({'status': 'group added'})
+        return Response({'error': 'Group not provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+    def perform_update(self, serializer):
+        # Set the current user as the manager
+        serializer.instance.manager = self.request.user
+        serializer.save()
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
