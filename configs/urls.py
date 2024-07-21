@@ -1,12 +1,11 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from orders.views import OrderModelViewSet, RegisterView, CustomTokenObtainPairView, CommentCreateView, CommentListView, \
-    GroupCreateView, GroupListView
+from orders.views import OrderModelViewSet, RegisterView, CustomTokenObtainPairView, CommentCreateView, CommentListView, GroupCreateView, GroupListView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
-router.register(r'orders', OrderModelViewSet)
+router.register(r'orders', OrderModelViewSet, basename='order')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -2,14 +2,15 @@ from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from .models import UserProfile, OrderModel, Comment, Group, STATUS_CHOICES
-from .serializers import UserSerializer, OrderSerializer, CustomTokenObtainPairSerializer, CommentSerializer, \
-    GroupSerializer
+from .serializers import UserSerializer, OrderSerializer, CustomTokenObtainPairSerializer, CommentSerializer, GroupSerializer
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import OrderingFilter
 from rest_framework.generics import ListAPIView
 from rest_framework.decorators import action
+from django_filters.rest_framework import DjangoFilterBackend
+from .filters import OrderFilter
 
 
 class IsOrderManagerOrReadOnly(permissions.BasePermission):
@@ -67,9 +68,21 @@ class OrderModelViewSet(ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated, IsOrderManagerOrReadOnly]
     pagination_class = OrderPagination
-    filter_backends = [OrderingFilter]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_class = OrderFilter
     ordering_fields = '__all__'
     ordering = ['-id']
+
+    @action(detail=False, methods=['post'], url_path='filter', url_name='filter-orders')
+    def filter_orders(self, request):
+        filter_data = {k: v for k, v in request.data.items() if v}
+        filtered_orders = OrderModel.objects.filter(**filter_data)
+        page = self.paginate_queryset(filtered_orders)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(filtered_orders, many=True)
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def add_group(self, request, pk=None):
