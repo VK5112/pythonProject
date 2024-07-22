@@ -2,7 +2,8 @@ from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from .models import UserProfile, OrderModel, Comment, Group, STATUS_CHOICES
-from .serializers import UserSerializer, OrderSerializer, CustomTokenObtainPairSerializer, CommentSerializer, GroupSerializer
+from .serializers import UserSerializer, OrderSerializer, CustomTokenObtainPairSerializer, CommentSerializer, \
+    GroupSerializer
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
@@ -11,6 +12,8 @@ from rest_framework.generics import ListAPIView
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import OrderFilter
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class IsOrderManagerOrReadOnly(permissions.BasePermission):
@@ -135,3 +138,14 @@ class GroupListView(generics.ListAPIView):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
+class LogoutView(APIView):
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
