@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import UserProfile, OrderModel, Comment, Group
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils.translation import gettext_lazy as _
 
 STATUS_CHOICES = ['In work', 'New', 'Agree', 'Disagree', 'Dubbing']
 COURSE_CHOICES = ['FS', 'QACX', 'JCX', 'JSCX', 'FE', 'PCX']
@@ -10,22 +11,34 @@ COURSE_FORMAT_CHOICES = ['static', 'online']
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    user = serializers.ReadOnlyField(source='user.username')
+    first_name = serializers.ReadOnlyField(source='user.first_name')
+    last_name = serializers.ReadOnlyField(source='user.last_name')
+    utm = serializers.ReadOnlyField(source='order.utm')
+    msg = serializers.ReadOnlyField(source='order.msg')
 
     class Meta:
         model = Comment
-        fields = ['id', 'user', 'text', 'created_at', 'order']
+        fields = ['id', 'first_name', 'last_name', 'text', 'created_at', 'order', 'utm', 'msg']
 
 
 class OrderSerializer(serializers.ModelSerializer):
     manager_username = serializers.CharField(source='manager.username', read_only=True)
     manager = serializers.SlugRelatedField(slug_field='username', queryset=User.objects.all(), write_only=True,
                                            allow_null=True, required=False)
-    comments = CommentSerializer(many=True, read_only=True)
+    name = serializers.CharField(allow_blank=True, required=False)
+    surname = serializers.CharField(allow_blank=True, required=False)
+    email = serializers.EmailField(allow_blank=True, required=False)
+    phone = serializers.CharField(allow_blank=True, required=False)
+    course = serializers.CharField(allow_blank=True, required=False)
+    course_format = serializers.CharField(allow_blank=True, required=False)
+    course_type = serializers.CharField(allow_blank=True, required=False)
+    status = serializers.CharField(allow_blank=True, required=False)
+    group = serializers.CharField(allow_blank=True, required=False)
 
     class Meta:
         model = OrderModel
-        fields = '__all__'
+        exclude = ['utm', 'msg']
+        read_only_fields = ['comments']
 
     def create(self, validated_data):
         manager_username = validated_data.pop('manager', None)
@@ -35,6 +48,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         manager_username = validated_data.pop('manager', None)
+        validated_data = {k: v for k, v in validated_data.items() if v != ""}
         if manager_username:
             validated_data['manager_username'] = manager_username.username
             instance.manager = User.objects.get(username=manager_username.username)
@@ -48,19 +62,19 @@ class OrderSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def validate_course(value):
-        if value not in COURSE_CHOICES:
+        if value and value not in COURSE_CHOICES:
             raise serializers.ValidationError(f'Course must be one of {COURSE_CHOICES}')
         return value
 
     @staticmethod
     def validate_course_format(value):
-        if value not in COURSE_FORMAT_CHOICES:
+        if value and value not in COURSE_FORMAT_CHOICES:
             raise serializers.ValidationError(f'Course format must be one of {COURSE_FORMAT_CHOICES}')
         return value
 
     @staticmethod
     def validate_course_type(value):
-        if value not in COURSE_TYPE_CHOICES:
+        if value and value not in COURSE_TYPE_CHOICES:
             raise serializers.ValidationError(f'Course type must be one of {COURSE_TYPE_CHOICES}')
         return value
 
@@ -91,39 +105,39 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-
-        token['user_id'] = user.id
-        token['username'] = user.username
-
-        user_profile = UserProfile.objects.get(user=user)
-        token['role'] = user_profile.role
-        token['first_name'] = user_profile.first_name
-        token['last_name'] = user_profile.last_name
-
-        return token
+class CustomTokenObtainPairSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
 
     def validate(self, attrs):
-        data = super().validate(attrs)
+        email = attrs.get('email')
+        password = attrs.get('password')
 
-        user_data = {
-            'user_id': self.user.id,
-            'username': self.user.username,
-            'role': self.user.userprofile.role,
-            'first_name': self.user.first_name,
-            'last_name': self.user.last_name,
-        }
+        if email and password:
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                raise serializers.ValidationError(_('No account found with this email address.'))
 
-        data.update(user_data)
-        access = data.pop('access')
-        refresh = data.pop('refresh')
-        data['access'] = access
-        data['refresh'] = refresh
+            if not user.check_password(password):
+                raise serializers.ValidationError(_('Incorrect password.'))
 
-        return data
+            data = {}
+            refresh = RefreshToken.for_user(user)
+            data['refresh'] = str(refresh)
+            data['access'] = str(refresh.access_token)
+
+            data.update({
+                'user_id': user.id,
+                'username': user.username,
+                'role': user.userprofile.role,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+            })
+
+            return data
+        else:
+            raise serializers.ValidationError(_('Must include "email" and "password".'))
 
 
 class GroupSerializer(serializers.ModelSerializer):

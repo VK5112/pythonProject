@@ -98,8 +98,7 @@ class OrderModelViewSet(ModelViewSet):
         return Response({'error': 'Group not provided'}, status=status.HTTP_400_BAD_REQUEST)
 
     def perform_update(self, serializer):
-        serializer.instance.manager = self.request.user
-        serializer.save()
+        serializer.save(manager=self.request.user)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -107,10 +106,13 @@ class OrderModelViewSet(ModelViewSet):
 
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-
-        if getattr(instance, '_prefetched_objects_cache', None):
-            instance._prefetched_objects_cache = {}
+        validated_data = {k: v for k, v in serializer.validated_data.items() if v != ""}
+        if 'manager' in validated_data:
+            validated_data.pop('manager')
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.manager = self.request.user
+        instance.save()
 
         return Response(serializer.data)
 
@@ -141,7 +143,8 @@ class GroupListView(generics.ListAPIView):
 
 
 class LogoutView(APIView):
-    def post(self, request):
+    @staticmethod
+    def post(request):
         try:
             refresh_token = request.data["refresh"]
             token = RefreshToken(refresh_token)

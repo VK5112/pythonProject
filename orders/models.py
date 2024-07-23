@@ -62,19 +62,19 @@ class Group(models.Model):
 
 
 class OrderModel(models.Model):
-    name = models.CharField(max_length=120)
-    surname = models.CharField(max_length=120)
-    email = models.EmailField()
-    phone = models.CharField(max_length=120)
-    age = models.IntegerField()
-    course = models.CharField(max_length=120)
-    course_format = models.CharField(max_length=120)
-    course_type = models.CharField(max_length=120)
-    sum = models.IntegerField()
-    alreadyPaid = models.IntegerField(default=0)
+    name = models.CharField(max_length=120, blank=True, null=True)
+    surname = models.CharField(max_length=120, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=120, blank=True, null=True)
+    age = models.IntegerField(blank=True, null=True)
+    course = models.CharField(max_length=120, blank=True, null=True)
+    course_format = models.CharField(max_length=120, blank=True, null=True)
+    course_type = models.CharField(max_length=120, blank=True, null=True)
+    sum = models.IntegerField(blank=True, null=True)
+    alreadyPaid = models.IntegerField(default=0, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    utm = models.CharField(max_length=120)
-    msg = models.CharField(max_length=120)
+    utm = models.CharField(max_length=120, blank=True, null=True)
+    msg = models.CharField(max_length=120, blank=True, null=True)
     manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=20, null=True, blank=True)
     group = models.CharField(max_length=120, blank=True, null=True)
@@ -82,11 +82,11 @@ class OrderModel(models.Model):
     def clean(self):
         if self.status and self.status not in STATUS_CHOICES:
             raise ValidationError(f'Status must be one of {STATUS_CHOICES}')
-        if self.course not in COURSE_CHOICES:
+        if self.course and self.course not in COURSE_CHOICES:
             raise ValidationError(f'Course must be one of {COURSE_CHOICES}')
-        if self.course_format not in COURSE_FORMAT_CHOICES:
+        if self.course_format and self.course_format not in COURSE_FORMAT_CHOICES:
             raise ValidationError(f'Course format must be one of {COURSE_FORMAT_CHOICES}')
-        if self.course_type not in COURSE_TYPE_CHOICES:
+        if self.course_type and self.course_type not in COURSE_TYPE_CHOICES:
             raise ValidationError(f'Course type must be one of {COURSE_TYPE_CHOICES}')
 
     def save(self, *args, **kwargs):
