@@ -14,6 +14,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .filters import OrderFilter
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db import models
+from rest_framework.permissions import IsAdminUser
 
 
 class IsOrderManagerOrReadOnly(permissions.BasePermission):
@@ -152,3 +154,29 @@ class LogoutView(APIView):
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class OrderStatisticsView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        total_count = OrderModel.objects.count()
+        statuses = OrderModel.objects.values('status').annotate(count=models.Count('status'))
+
+        null_count = OrderModel.objects.filter(status__isnull=True).count()
+
+        status_counts = {status['status']: status['count'] for status in statuses}
+        status_counts[None] = null_count
+
+        for status in ['In work', 'New', 'Agree', 'Disagree', 'Dubbing', None]:
+            if status not in status_counts:
+                status_counts[status] = 0
+
+        sorted_statuses = sorted(status_counts.items(), key=lambda x: (x[0] is not None, str(x[0])))
+
+        result = {
+            'total_count': total_count,
+            'statuses': [{'status': status if status is not None else 'null', 'count': count} for status, count in sorted_statuses]
+        }
+
+        return Response(result)

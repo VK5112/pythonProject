@@ -10,6 +10,12 @@ COURSE_TYPE_CHOICES = ['pro', 'minimal', 'premium', 'incubator', 'vip']
 COURSE_FORMAT_CHOICES = ['static', 'online']
 
 
+class ManagerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name']
+
+
 class CommentSerializer(serializers.ModelSerializer):
     first_name = serializers.ReadOnlyField(source='user.first_name')
     last_name = serializers.ReadOnlyField(source='user.last_name')
@@ -22,36 +28,27 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    manager_username = serializers.CharField(source='manager.username', read_only=True)
-    manager = serializers.SlugRelatedField(slug_field='username', queryset=User.objects.all(), write_only=True,
-                                           allow_null=True, required=False)
-    name = serializers.CharField(allow_blank=True, required=False)
-    surname = serializers.CharField(allow_blank=True, required=False)
-    email = serializers.EmailField(allow_blank=True, required=False)
-    phone = serializers.CharField(allow_blank=True, required=False)
-    course = serializers.CharField(allow_blank=True, required=False)
-    course_format = serializers.CharField(allow_blank=True, required=False)
-    course_type = serializers.CharField(allow_blank=True, required=False)
-    status = serializers.CharField(allow_blank=True, required=False)
-    group = serializers.CharField(allow_blank=True, required=False)
+    manager = ManagerSerializer(read_only=True)
 
     class Meta:
         model = OrderModel
-        exclude = ['utm', 'msg']
+        fields = [
+            'id', 'name', 'surname', 'email', 'phone', 'age', 'course', 'course_format',
+            'course_type', 'sum', 'alreadyPaid', 'created_at', 'status', 'group', 'manager'
+        ]
         read_only_fields = ['comments']
 
     def create(self, validated_data):
         manager_username = validated_data.pop('manager', None)
         if manager_username:
-            validated_data['manager_username'] = manager_username.username
+            validated_data['manager'] = User.objects.get(username=manager_username.username)
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
         manager_username = validated_data.pop('manager', None)
         validated_data = {k: v for k, v in validated_data.items() if v != ""}
         if manager_username:
-            validated_data['manager_username'] = manager_username.username
-            instance.manager = User.objects.get(username=manager_username.username)
+            validated_data['manager'] = User.objects.get(username=manager_username.username)
         return super().update(instance, validated_data)
 
     @staticmethod

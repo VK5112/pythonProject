@@ -75,9 +75,9 @@ class OrderModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     utm = models.CharField(max_length=120, blank=True, null=True)
     msg = models.CharField(max_length=120, blank=True, null=True)
-    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=20, null=True, blank=True)
     group = models.CharField(max_length=120, blank=True, null=True)
+    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
     def clean(self):
         if self.status and self.status not in STATUS_CHOICES:

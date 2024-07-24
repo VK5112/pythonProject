@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from orders.views import OrderModelViewSet, RegisterView, CustomTokenObtainPairView, CommentCreateView, CommentListView, \
-    GroupCreateView, GroupListView, LogoutView
+    GroupCreateView, GroupListView, LogoutView, OrderStatisticsView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
@@ -19,4 +19,5 @@ urlpatterns = [
     path('groups/', GroupCreateView.as_view(), name='group_create'),
     path('groups/list/', GroupListView.as_view(), name='group_list'),
     path('logout/', LogoutView.as_view(), name='token_blacklist'),
+    path('api/admin/statistic/orders/', OrderStatisticsView.as_view(), name='order_statistics'),
 ]
