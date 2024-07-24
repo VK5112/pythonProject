@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from orders.views import OrderModelViewSet, RegisterView, CustomTokenObtainPairView, CommentCreateView, CommentListView, \
-    GroupCreateView, GroupListView, LogoutView, OrderStatisticsView
+from orders.views import OrderModelViewSet, RegisterView, CustomTokenObtainPairView, CommentCreateView, \
+    CommentListView, GroupCreateView, GroupListView, LogoutView, OrderStatisticsView, OrderExcelExportView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
@@ -20,4 +20,5 @@ urlpatterns = [
     path('groups/list/', GroupListView.as_view(), name='group_list'),
     path('logout/', LogoutView.as_view(), name='token_blacklist'),
     path('api/admin/statistic/orders/', OrderStatisticsView.as_view(), name='order_statistics'),
+    path('orders/excel/', OrderExcelExportView.as_view(), name='order_export_excel'),
 ]

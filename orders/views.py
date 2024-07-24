@@ -1,9 +1,9 @@
+import pandas as pd
 from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from .models import UserProfile, OrderModel, Comment, Group, STATUS_CHOICES
-from .serializers import UserSerializer, OrderSerializer, CustomTokenObtainPairSerializer, CommentSerializer, \
-    GroupSerializer
+from .serializers import UserSerializer, OrderSerializer, CustomTokenObtainPairSerializer, CommentSerializer, GroupSerializer
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
@@ -14,8 +14,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .filters import OrderFilter
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.db import models
 from rest_framework.permissions import IsAdminUser
+from django.http import HttpResponse
+from io import BytesIO
+from datetime import datetime
+from django.db import models
 
 
 class IsOrderManagerOrReadOnly(permissions.BasePermission):
@@ -180,3 +183,46 @@ class OrderStatisticsView(APIView):
         }
 
         return Response(result)
+
+
+class OrderExcelExportView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @staticmethod
+    def post(request):
+        filter_data = request.data
+        orders = OrderModel.objects.filter(**filter_data)
+
+        data = []
+        for order in orders:
+            data.append({
+                'ID': order.id,
+                'Name': order.name,
+                'Surname': order.surname,
+                'Email': order.email,
+                'Phone': order.phone,
+                'Age': order.age,
+                'Course': order.course,
+                'Course Format': order.course_format,
+                'Course Type': order.course_type,
+                'Sum': order.sum,
+                'Already Paid': order.alreadyPaid,
+                'Created At': order.created_at.replace(tzinfo=None),
+                'Status': order.status,
+                'Group': order.group,
+                'Manager': order.manager.username if order.manager else None
+            })
+        df = pd.DataFrame(data)
+
+        output = BytesIO()
+        writer = pd.ExcelWriter(output, engine='openpyxl')
+        df.to_excel(writer, index=False, sheet_name='Orders')
+        writer.close()
+        output.seek(0)
+
+        now = datetime.now().strftime("%d.%m.%Y_%H:%M:%S")
+        filename = f"{now}.xlsx"
+
+        response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename={filename}'
+        return response
