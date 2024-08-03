@@ -1,10 +1,9 @@
-import pandas as pd
+from django.db import models
 from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
-from django.contrib.auth.models import User
-from .models import UserProfile, OrderModel, Comment, Group, STATUS_CHOICES
-from .serializers import UserSerializer, OrderSerializer, CustomTokenObtainPairSerializer, CommentSerializer, GroupSerializer
-from rest_framework.viewsets import ModelViewSet
+from .models import OrderModel, Comment, Group, STATUS_CHOICES
+from .serializers import OrderSerializer, CustomTokenObtainPairSerializer, CommentSerializer, GroupSerializer
+from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import OrderingFilter
@@ -15,10 +14,7 @@ from .filters import OrderFilter
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAdminUser
-from django.http import HttpResponse
-from io import BytesIO
-from datetime import datetime
-from django.db import models
+from django.contrib.auth.models import User
 
 
 class IsOrderManagerOrReadOnly(permissions.BasePermission):
@@ -44,34 +40,11 @@ class CommentCreateView(generics.CreateAPIView):
             raise serializers.ValidationError('You cannot comment on this order.')
 
 
-class RegisterView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-
-        UserProfile.objects.update_or_create(
-            user=user,
-            defaults={
-                'role': 'manager',
-                'username': user.username,
-                'first_name': user.first_name,
-                'last_name': user.last_name
-            }
-        )
-
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-
 class OrderPagination(PageNumberPagination):
     page_size = 25
 
 
-class OrderModelViewSet(ModelViewSet):
+class OrderModelViewSet(ReadOnlyModelViewSet):
     queryset = OrderModel.objects.all().order_by('-id')
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated, IsOrderManagerOrReadOnly]
@@ -101,25 +74,6 @@ class OrderModelViewSet(ModelViewSet):
             order.save()
             return Response({'status': 'group added'})
         return Response({'error': 'Group not provided'}, status=status.HTTP_400_BAD_REQUEST)
-
-    def perform_update(self, serializer):
-        serializer.save(manager=self.request.user)
-
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        validated_data = {k: v for k, v in serializer.validated_data.items() if v != ""}
-        if 'manager' in validated_data:
-            validated_data.pop('manager')
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.manager = self.request.user
-        instance.save()
-
-        return Response(serializer.data)
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -162,7 +116,8 @@ class LogoutView(APIView):
 class OrderStatisticsView(APIView):
     permission_classes = [IsAdminUser]
 
-    def get(self, request):
+    @staticmethod
+    def get(request):
         total_count = OrderModel.objects.count()
         statuses = OrderModel.objects.values('status').annotate(count=models.Count('status'))
 
@@ -179,50 +134,25 @@ class OrderStatisticsView(APIView):
 
         result = {
             'total_count': total_count,
-            'statuses': [{'status': status if status is not None else 'null', 'count': count} for status, count in sorted_statuses]
+            'statuses': [{'status': status if status is not None else 'null', 'count': count} for status, count in
+                         sorted_statuses]
         }
 
         return Response(result)
 
 
-class OrderExcelExportView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+# New code for listing users
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'first_name', 'last_name', 'is_staff', 'date_joined', 'last_login']
+
+
+class UserListView(APIView):
+    permission_classes = [IsAdminUser]
 
     @staticmethod
-    def post(request):
-        filter_data = request.data
-        orders = OrderModel.objects.filter(**filter_data)
-
-        data = []
-        for order in orders:
-            data.append({
-                'ID': order.id,
-                'Name': order.name,
-                'Surname': order.surname,
-                'Email': order.email,
-                'Phone': order.phone,
-                'Age': order.age,
-                'Course': order.course,
-                'Course Format': order.course_format,
-                'Course Type': order.course_type,
-                'Sum': order.sum,
-                'Already Paid': order.alreadyPaid,
-                'Created At': order.created_at.replace(tzinfo=None),
-                'Status': order.status,
-                'Group': order.group,
-                'Manager': order.manager.username if order.manager else None
-            })
-        df = pd.DataFrame(data)
-
-        output = BytesIO()
-        writer = pd.ExcelWriter(output, engine='openpyxl')
-        df.to_excel(writer, index=False, sheet_name='Orders')
-        writer.close()
-        output.seek(0)
-
-        now = datetime.now().strftime("%d.%m.%Y_%H:%M:%S")
-        filename = f"{now}.xlsx"
-
-        response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = f'attachment; filename={filename}'
-        return response
+    def get(request):
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
