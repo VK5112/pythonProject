@@ -1,4 +1,3 @@
-from django.db import models
 from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from .models import OrderModel, Comment, Group, STATUS_CHOICES
@@ -15,6 +14,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAdminUser
 from django.contrib.auth.models import User
+from django.db.models import Count
 
 
 class IsOrderManagerOrReadOnly(permissions.BasePermission):
@@ -119,7 +119,7 @@ class OrderStatisticsView(APIView):
     @staticmethod
     def get(request):
         total_count = OrderModel.objects.count()
-        statuses = OrderModel.objects.values('status').annotate(count=models.Count('status'))
+        statuses = OrderModel.objects.values('status').annotate(count=Count('status'))
 
         null_count = OrderModel.objects.filter(status__isnull=True).count()
 
@@ -141,11 +141,36 @@ class OrderStatisticsView(APIView):
         return Response(result)
 
 
-# New code for listing users
+class UserOrderStatisticsView(APIView):
+    permission_classes = [IsAdminUser]
+
+    @staticmethod
+    def get(request, id):
+        user = User.objects.get(pk=id)
+        orders = OrderModel.objects.filter(manager=user)
+
+        statuses = orders.values('status').annotate(count=Count('status'))
+
+        result = {
+            'total_count': orders.count(),
+            'statuses': [{'status': status['status'], 'count': status['count']} for status in statuses]
+        }
+
+        return Response(result)
+
+
 class UserSerializer(serializers.ModelSerializer):
+    email = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'is_staff', 'date_joined', 'last_login']
+
+    @staticmethod
+    def get_email(obj):
+        if obj.is_staff:
+            return '********'
+        return obj.email
 
 
 class UserListView(APIView):
