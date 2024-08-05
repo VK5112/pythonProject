@@ -168,3 +168,31 @@ class UserListView(APIView):
         users = User.objects.all()
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
+
+
+class BanUserView(APIView):
+    permission_classes = [IsAdminUser]
+
+    @staticmethod
+    def patch(request, id):
+        try:
+            user = User.objects.get(pk=id)
+            user.is_active = False
+            user.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except User.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class UnbanUserView(APIView):
+    permission_classes = [IsAdminUser]
+
+    @staticmethod
+    def patch(request, id):
+        try:
+            user = User.objects.get(pk=id)
+            user.is_active = True
+            user.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except User.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)

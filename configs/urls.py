@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from orders.views import (
     OrderModelViewSet, CustomTokenObtainPairView, CommentCreateView,
     CommentListView, GroupCreateView, GroupListView, LogoutView, OrderStatisticsView,
-    UserListView, UserOrderStatisticsView
+    UserListView, UserOrderStatisticsView, BanUserView, UnbanUserView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_yasg.views import get_schema_view
@@ -37,6 +37,8 @@ urlpatterns = [
     path('groups/list/', GroupListView.as_view(), name='group_list'),
     path('', include(router.urls)),
     path('admin/users/', UserListView.as_view(), name='admin_users_list'),
+    path('admin/users/<int:id>/ban/', BanUserView.as_view(), name='ban_user'),
+    path('admin/users/<int:id>/unban/', UnbanUserView.as_view(), name='unban_user'),
     path('admin/statistic/orders/', OrderStatisticsView.as_view(), name='admin_order_statistics'),
     path('admin/statistic/users/<int:id>/', UserOrderStatisticsView.as_view(), name='admin_user_order_statistics'),
     path('api/v1/doc/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
