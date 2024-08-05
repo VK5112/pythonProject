@@ -1,7 +1,8 @@
 from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from .models import OrderModel, Comment, Group, STATUS_CHOICES
-from .serializers import OrderSerializer, CustomTokenObtainPairSerializer, CommentSerializer, GroupSerializer
+from .serializers import OrderSerializer, CustomTokenObtainPairSerializer, CommentSerializer, GroupSerializer, \
+    UserSerializer
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
@@ -157,20 +158,6 @@ class UserOrderStatisticsView(APIView):
         }
 
         return Response(result)
-
-
-class UserSerializer(serializers.ModelSerializer):
-    email = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = ['id', 'email', 'first_name', 'last_name', 'is_staff', 'date_joined', 'last_login']
-
-    @staticmethod
-    def get_email(obj):
-        if obj.is_staff:
-            return '********'
-        return obj.email
 
 
 class UserListView(APIView):
