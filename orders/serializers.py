@@ -28,27 +28,19 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    manager = ManagerSerializer(read_only=True)
-
     class Meta:
         model = OrderModel
         fields = [
             'id', 'name', 'surname', 'email', 'phone', 'age', 'course', 'course_format',
-            'course_type', 'sum', 'alreadyPaid', 'created_at', 'status', 'group', 'manager'
+            'course_type', 'sum', 'alreadyPaid', 'created_at', 'status', 'group'
         ]
         read_only_fields = ['comments']
 
     def create(self, validated_data):
-        manager_username = validated_data.pop('manager', None)
-        if manager_username:
-            validated_data['manager'] = User.objects.get(username=manager_username.username)
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        manager_username = validated_data.pop('manager', None)
         validated_data = {k: v for k, v in validated_data.items() if v != ""}
-        if manager_username:
-            validated_data['manager'] = User.objects.get(username=manager_username.username)
         return super().update(instance, validated_data)
 
     @staticmethod
@@ -81,8 +73,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = {'id', 'username', 'password', 'email', 'first_name', 'last_name', 'is_active', 'is_superuser',
-                  'is_staff', 'date_joined', 'last_login'}
+        fields = ['id', 'username', 'password', 'email', 'first_name', 'last_name', 'is_active', 'is_superuser',
+                  'is_staff', 'date_joined', 'last_login']
         extra_kwargs = {'password': {'write_only': True}}
 
     @staticmethod
@@ -156,3 +148,13 @@ class GroupSerializer(serializers.ModelSerializer):
         if Group.objects.filter(name=value).exists():
             raise serializers.ValidationError("Group with this name already exists.")
         return value
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    def validate(self, attrs):
+        refresh = attrs.get("refresh")
+        if not refresh:
+            raise serializers.ValidationError("Refresh token is required.")
+        return attrs

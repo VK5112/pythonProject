@@ -1,14 +1,15 @@
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
 from .models import OrderModel, Comment, Group, STATUS_CHOICES
 from .serializers import OrderSerializer, CustomTokenObtainPairSerializer, CommentSerializer, GroupSerializer, \
-    UserSerializer
-from rest_framework.viewsets import ReadOnlyModelViewSet
+    UserSerializer, LogoutSerializer
+from rest_framework.viewsets import GenericViewSet
+from rest_framework.mixins import RetrieveModelMixin, ListModelMixin
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import OrderingFilter
 from rest_framework.generics import ListAPIView
-from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import OrderFilter
 from rest_framework.views import APIView
@@ -45,7 +46,7 @@ class OrderPagination(PageNumberPagination):
     page_size = 25
 
 
-class OrderModelViewSet(ReadOnlyModelViewSet):
+class OrderModelViewSet(RetrieveModelMixin, ListModelMixin, GenericViewSet):
     queryset = OrderModel.objects.all().order_by('-id')
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated, IsOrderManagerOrReadOnly]
@@ -55,26 +56,9 @@ class OrderModelViewSet(ReadOnlyModelViewSet):
     ordering_fields = '__all__'
     ordering = ['-id']
 
-    @action(detail=False, methods=['post'], url_path='filter', url_name='filter-orders')
-    def filter_orders(self, request):
-        filter_data = {k: v for k, v in request.data.items() if v}
-        filtered_orders = OrderModel.objects.filter(**filter_data)
-        page = self.paginate_queryset(filtered_orders)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(filtered_orders, many=True)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['post'])
-    def add_group(self, request, pk=None):
-        order = self.get_object()
-        group = request.data.get('group')
-        if group:
-            order.group = group
-            order.save()
-            return Response({'status': 'group added'})
-        return Response({'error': 'Group not provided'}, status=status.HTTP_400_BAD_REQUEST)
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -103,10 +87,19 @@ class GroupListView(generics.ListAPIView):
 
 
 class LogoutView(APIView):
-    @staticmethod
-    def post(request):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = LogoutSerializer
+
+    @swagger_auto_schema(
+        request_body=LogoutSerializer,
+        responses={205: 'Token successfully blacklisted', 400: 'Bad Request'}
+    )
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         try:
-            refresh_token = request.data["refresh"]
+            refresh_token = serializer.validated_data["refresh"]
             token = RefreshToken(refresh_token)
             token.blacklist()
             return Response(status=status.HTTP_205_RESET_CONTENT)
@@ -135,8 +128,7 @@ class OrderStatisticsView(APIView):
 
         result = {
             'total_count': total_count,
-            'statuses': [{'status': status if status is not None else 'null', 'count': count} for status, count in
-                         sorted_statuses]
+            'statuses': [{'status': status if status is not None else 'null', 'count': count} for status, count in sorted_statuses]
         }
 
         return Response(result)
