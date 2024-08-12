@@ -1,9 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
+from rest_framework_simplejwt.exceptions import TokenError
 from .models import OrderModel, Comment, Group, STATUS_CHOICES
 from .serializers import OrderSerializer, CustomTokenObtainPairSerializer, CommentSerializer, GroupSerializer, \
-    UserSerializer, LogoutSerializer
+    UserSerializer, LogoutSerializer, ActivateUserSerializer
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.mixins import RetrieveModelMixin, ListModelMixin
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -128,7 +129,8 @@ class OrderStatisticsView(APIView):
 
         result = {
             'total_count': total_count,
-            'statuses': [{'status': status if status is not None else 'null', 'count': count} for status, count in sorted_statuses]
+            'statuses': [{'status': status if status is not None else 'null', 'count': count} for status, count in
+                         sorted_statuses]
         }
 
         return Response(result)
@@ -188,3 +190,89 @@ class UnbanUserView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except User.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class CreateUserView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = UserSerializer
+
+    def perform_create(self, serializer):
+        user = serializer.save(is_active=False)
+        profile_data = self.request.data.get('profile')
+
+        if profile_data:
+            user.userprofile.first_name = profile_data.get('first_name', '')
+            user.userprofile.last_name = profile_data.get('last_name', '')
+            user.userprofile.save()
+
+        return user
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.perform_create(serializer)
+        user_data = {
+            "id": user.id,
+            "email": user.email,
+            "is_active": user.is_active,
+            "is_superuser": user.is_superuser,
+            "is_staff": user.is_staff,
+            "create_at": user.date_joined,
+            "last_login": user.last_login,
+            "profile": {
+                "first_name": user.userprofile.first_name,
+                "last_name": user.userprofile.last_name
+            } if hasattr(user, 'userprofile') else None
+        }
+        return Response(user_data, status=status.HTTP_201_CREATED)
+
+
+class UserActivationTokenView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @swagger_auto_schema(
+        operation_description="Get activation token for a user",
+        responses={200: "Token", 404: "User not found"}
+    )
+    def get(self, request, id, *args, **kwargs):
+        try:
+            user = User.objects.get(pk=id)
+            if not user.is_active:
+                refresh_token = RefreshToken.for_user(user)
+                return Response({"token": str(refresh_token)}, status=status.HTTP_200_OK)
+            else:
+                return Response({"detail": "User is already active"}, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ActivateUserView(APIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = ActivateUserSerializer
+
+    @swagger_auto_schema(request_body=ActivateUserSerializer)
+    def post(self, request, token, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            refresh_token = RefreshToken(token)
+            user_id = refresh_token.get('user_id')
+
+            if not user_id:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+
+            user = User.objects.get(id=user_id)
+
+            if user.is_active:
+                return Response({"detail": "User is already active"}, status=status.HTTP_400_BAD_REQUEST)
+
+            user.set_password(serializer.validated_data["password"])
+            user.is_active = True
+            user.save()
+
+            return Response({"detail": "User activated successfully"}, status=status.HTTP_200_OK)
+        except TokenError:
+            return Response({"detail": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)

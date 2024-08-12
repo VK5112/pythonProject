@@ -19,29 +19,29 @@ class UserProfile(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
-    username = models.CharField(max_length=150)
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
 
+    class Meta:
+        unique_together = ['user']
+
     def __str__(self):
-        return f"{self.user.username} - {self.role}"
+        return f"{self.user.email} - {self.role}"
 
 
 @receiver(post_save, sender=User)
-def create_user_profile(instance, created, **kwargs):
+def create_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.create(
             user=instance,
             role='manager',
-            username=instance.username,
             first_name=instance.first_name,
             last_name=instance.last_name,
         )
 
 
 @receiver(post_save, sender=User)
-def save_user_profile(instance, **kwargs):
-    instance.userprofile.username = instance.username
+def save_user_profile(sender, instance, **kwargs):
     instance.userprofile.first_name = instance.first_name
     instance.userprofile.last_name = instance.last_name
     instance.userprofile.save()

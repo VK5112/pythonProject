@@ -1,3 +1,4 @@
+from django.utils.crypto import get_random_string
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import UserProfile, OrderModel, Comment, Group
@@ -68,38 +69,33 @@ class OrderSerializer(serializers.ModelSerializer):
         return value
 
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['first_name', 'last_name']
+
+
 class UserSerializer(serializers.ModelSerializer):
-    email = serializers.SerializerMethodField()
+    profile = UserProfileSerializer(source='userprofile', required=False)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'password', 'email', 'first_name', 'last_name', 'is_active', 'is_superuser',
-                  'is_staff', 'date_joined', 'last_login']
-        extra_kwargs = {'password': {'write_only': True}}
-
-    @staticmethod
-    def get_email(obj):
-        if obj.is_superuser:
-            return '********'
-        return obj.email
+        fields = ['email', 'is_staff', 'profile']
 
     def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            password=validated_data['password'],
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name']
-        )
-        UserProfile.objects.update_or_create(
-            user=user,
-            defaults={
-                'role': 'manager',
-                'username': user.username,
-                'first_name': user.first_name,
-                'last_name': user.last_name
-            }
-        )
+        profile_data = validated_data.pop('userprofile', None)
+
+        username = get_random_string(10)
+        while User.objects.filter(username=username).exists():
+            username = get_random_string(10)
+
+        user = User.objects.create(username=username, **validated_data)
+
+        if profile_data:
+            user.userprofile.first_name = profile_data.get('first_name', '')
+            user.userprofile.last_name = profile_data.get('last_name', '')
+            user.userprofile.save()
+
         return user
 
 
@@ -158,3 +154,13 @@ class LogoutSerializer(serializers.Serializer):
         if not refresh:
             raise serializers.ValidationError("Refresh token is required.")
         return attrs
+
+
+class ActivateUserSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True, required=True)
+
+    @staticmethod
+    def validate_password(value):
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters long.")
+        return value
