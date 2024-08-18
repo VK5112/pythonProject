@@ -4,7 +4,7 @@ from orders.views import (
     OrderModelViewSet, CustomTokenObtainPairView, CommentCreateView,
     CommentListView, GroupCreateView, GroupListView, LogoutView, OrderStatisticsView,
     UserListView, UserOrderStatisticsView, BanUserView, UnbanUserView, CreateUserView, UserActivationTokenView,
-    ActivateUserView
+    ActivateUserView, OrderExcelExportView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_yasg.views import get_schema_view
@@ -34,6 +34,7 @@ urlpatterns = [
     path('auth/logout/', LogoutView.as_view(), name='token_blacklist'),
     path('orders/comments/', CommentCreateView.as_view(), name='comment_create'),
     path('orders/comments/<int:order_id>/', CommentListView.as_view(), name='order_comments'),
+    path('orders/excel/', OrderExcelExportView.as_view(), name='orders_excel_export'),
     path('groups/', GroupCreateView.as_view(), name='group_create'),
     path('groups/list/', GroupListView.as_view(), name='group_list'),
     path('', include(router.urls)),
@@ -43,7 +44,7 @@ urlpatterns = [
     path('admin/users/<int:id>/unban/', UnbanUserView.as_view(), name='unban_user'),
     path('admin/statistic/orders/', OrderStatisticsView.as_view(), name='admin_order_statistics'),
     path('admin/statistic/users/<int:id>/', UserOrderStatisticsView.as_view(), name='admin_user_order_statistics'),
-    path('admin/users/<int:id>/re_token', UserActivationTokenView.as_view(), name='admin_users_re_token'),
+    path('admin/users/<int:id>/re_token/', UserActivationTokenView.as_view(), name='admin_users_re_token'),
     path('auth/activate/<str:token>', ActivateUserView.as_view(), name='auth_activate_create'),
     path('api/v1/doc/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]

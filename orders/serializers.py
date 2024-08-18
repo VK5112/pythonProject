@@ -20,20 +20,20 @@ class ManagerSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     first_name = serializers.ReadOnlyField(source='user.first_name')
     last_name = serializers.ReadOnlyField(source='user.last_name')
-    utm = serializers.ReadOnlyField(source='order.utm')
-    msg = serializers.ReadOnlyField(source='order.msg')
 
     class Meta:
         model = Comment
-        fields = ['id', 'first_name', 'last_name', 'text', 'created_at', 'order', 'utm', 'msg']
+        fields = ['id', 'first_name', 'last_name', 'text', 'created_at', 'order']
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    manager = serializers.CharField(source='manager.first_name', read_only=True)
+
     class Meta:
         model = OrderModel
         fields = [
             'id', 'name', 'surname', 'email', 'phone', 'age', 'course', 'course_format',
-            'course_type', 'sum', 'alreadyPaid', 'created_at', 'status', 'group'
+            'course_type', 'sum', 'alreadyPaid', 'created_at', 'status', 'group', 'manager'
         ]
         read_only_fields = ['comments']
 
@@ -70,9 +70,11 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    user_id = serializers.ReadOnlyField(source='user.id')
+
     class Meta:
         model = UserProfile
-        fields = ['first_name', 'last_name']
+        fields = ['user_id', 'first_name', 'last_name']
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -83,7 +85,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['email', 'is_staff', 'profile']
 
     def create(self, validated_data):
-        profile_data = validated_data.pop('userprofile', None)
+        profile_data = validated_data.pop('userprofile', {})
 
         username = get_random_string(10)
         while User.objects.filter(username=username).exists():
@@ -91,10 +93,13 @@ class UserSerializer(serializers.ModelSerializer):
 
         user = User.objects.create(username=username, **validated_data)
 
-        if profile_data:
-            user.userprofile.first_name = profile_data.get('first_name', '')
-            user.userprofile.last_name = profile_data.get('last_name', '')
-            user.userprofile.save()
+        if not UserProfile.objects.filter(user=user).exists():
+            UserProfile.objects.create(
+                user=user,
+                role='manager',
+                first_name=profile_data.get('first_name', ''),
+                last_name=profile_data.get('last_name', '')
+            )
 
         return user
 

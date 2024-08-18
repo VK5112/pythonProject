@@ -1,0 +1,395 @@
+{
+	"info": {
+		"_postman_id": "ac6f93b3-4852-4599-bad2-3434ff2ffd88",
+		"name": "Final_Project",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "28773320"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "auth",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"your_email\",\n    \"password\": \"your_password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://127.0.0.1:8000/auth/"
+					},
+					"response": []
+				},
+				{
+					"name": "refresh",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refresh\": \"your_refresh_token\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://127.0.0.1:8000/auth/refresh/"
+					},
+					"response": []
+				},
+				{
+					"name": "activate_user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"password\": \"stringst\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://127.0.0.1:8000/auth/activate/{token}"
+					},
+					"response": []
+				},
+				{
+					"name": "logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refresh\": \"token\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://127.0.0.1:8000/auth/logout/"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "orders",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/orders/?ordering=-id&page=1",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"orders",
+								""
+							],
+							"query": [
+								{
+									"key": "ordering",
+									"value": "-id"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "edit_order",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n            \"name\": \"\",\n            \"surname\": \"\",\n            \"email\": \"\",\n            \"phone\": \"\",\n            \"age\": 0,\n            \"course\": \"\",\n            \"course_format\": \"\",\n            \"course_type\": \"\",\n            \"sum\": 0,\n            \"alreadyPaid\": 0,\n            \"status\": \"\",\n            \"group\": \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://127.0.0.1:8000/api/orders/{order_id}/"
+					},
+					"response": []
+				},
+				{
+					"name": "excel",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzIzNTUzODI0LCJpYXQiOjE3MjM1NTM1MjQsImp0aSI6IjdlYmI5MTgzZDg1ZjQ0OTlhZGFjOWEyOTZmZDZkM2Y1IiwidXNlcl9pZCI6MX0.-LH4gtKTi9eKnmuKlqg2S3fHRcIMphjli5zBX0Jh2lM"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ordering\":\"-id\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://127.0.0.1:8000/orders/excel/"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Comments",
+			"item": [
+				{
+					"name": "comments",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": "http://127.0.0.1:8000/orders/comments/{order_id}/"
+					},
+					"response": []
+				},
+				{
+					"name": "create_comment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"order\": 0,\n    \"text\": \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://127.0.0.1:8000/orders/comments/"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Groups",
+			"item": [
+				{
+					"name": "view_groups",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": "http://127.0.0.1:8000/groups/list/"
+					},
+					"response": []
+				},
+				{
+					"name": "crete_group",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Group Name\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://127.0.0.1:8000/groups/"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "orders_statistic",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": "http://127.0.0.1:8000/admin/statistic/orders/"
+					},
+					"response": []
+				},
+				{
+					"name": "users_status_statistic",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": "http://127.0.0.1:8000/admin/statistic/users/{id}/"
+					},
+					"response": []
+				},
+				{
+					"name": "users_info",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": "http://127.0.0.1:8000/admin/users/"
+					},
+					"response": []
+				},
+				{
+					"name": "unban",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "PATCH",
+						"header": [],
+						"url": "http://127.0.0.1:8000/admin/users/{id}/unban/"
+					},
+					"response": []
+				},
+				{
+					"name": "ban",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "PATCH",
+						"header": [],
+						"url": "http://127.0.0.1:8000/admin/users/{id}/ban/"
+					},
+					"response": []
+				},
+				{
+					"name": "create_new_user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"is_staff\": \"true\",\n  \"profile\": {\n    \"first_name\": \"string\",\n    \"last_name\": \"string\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://127.0.0.1:8000/admin/users"
+					},
+					"response": []
+				},
+				{
+					"name": "get_token",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": ""
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": "http://127.0.0.1:8000/admin/users/{id}/re_token/"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
