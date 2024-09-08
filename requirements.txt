@@ -21,6 +21,7 @@ jaraco.classes==3.4.0
 more-itertools==10.4.0
 msgpack==1.0.8
 mysqlclient==2.2.4
+Naked==0.1.32
 numpy==2.0.1
 openpyxl==3.1.5
 packaging==24.1
@@ -38,6 +39,7 @@ requests==2.32.3
 simplejwt==2.0.1
 six==1.16.0
 sqlparse==0.5.1
+status==0.2.5
 typing==3.7.4.3
 tzdata==2024.1
 uritemplate==4.1.1

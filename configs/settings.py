@@ -42,7 +42,12 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     # my_apps
+    'admin',
+    'auth',
+    'comments',
+    'groups',
     'orders',
+    'users',
 ]
 
 MIDDLEWARE = [

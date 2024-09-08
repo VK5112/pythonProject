@@ -1,15 +1,17 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from orders.views import (
-    OrderModelViewSet, CustomTokenObtainPairView, CommentCreateView,
-    CommentListView, GroupCreateView, GroupListView, LogoutView, OrderStatisticsView,
-    UserListView, UserOrderStatisticsView, BanUserView, UnbanUserView, CreateUserView, UserActivationTokenView,
-    ActivateUserView, OrderExcelExportView
-)
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
+
+from admin.views import BanUserView, UnbanUserView, OrderStatisticsView, UserOrderStatisticsView, \
+    UserActivationTokenView
+from auth.views import CustomTokenObtainPairView, LogoutView, ActivateUserView
+from comments.views import CommentCreateView, CommentListView
+from groups.views import GroupCreateView, GroupListView
+from orders.views import OrderModelViewSet, OrderExcelExportView
+from users.views import CreateUserView, UserListView
 
 router = DefaultRouter()
 router.register(r'orders', OrderModelViewSet, basename='order')
