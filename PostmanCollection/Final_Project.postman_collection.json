@@ -23,7 +23,7 @@
 								}
 							}
 						},
-						"url": "http://127.0.0.1:8000/auth/"
+						"url": "http://127.0.0.1:8000/authorization/"
 					},
 					"response": []
 				},
@@ -41,7 +41,7 @@
 								}
 							}
 						},
-						"url": "http://127.0.0.1:8000/auth/refresh/"
+						"url": "http://127.0.0.1:8000/authorization/refresh/"
 					},
 					"response": []
 				},
@@ -58,14 +58,14 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"password\": \"stringst\"\n}",
+							"raw": "{\n  \"password\": \"password\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
 						},
-						"url": "http://127.0.0.1:8000/auth/activate/{token}"
+						"url": "http://127.0.0.1:8000/authorization/activate/{token}"
 					},
 					"response": []
 				},
@@ -89,7 +89,7 @@
 								}
 							}
 						},
-						"url": "http://127.0.0.1:8000/auth/logout/"
+						"url": "http://127.0.0.1:8000/authorization/logout/"
 					},
 					"response": []
 				}
@@ -292,7 +292,7 @@
 						},
 						"method": "GET",
 						"header": [],
-						"url": "http://127.0.0.1:8000/admin/statistic/orders/"
+						"url": "http://127.0.0.1:8000/admin_panel/statistic/orders/"
 					},
 					"response": []
 				},
@@ -307,7 +307,7 @@
 						},
 						"method": "GET",
 						"header": [],
-						"url": "http://127.0.0.1:8000/admin/statistic/users/{id}/"
+						"url": "http://127.0.0.1:8000/admin_panel/statistic/users/{id}/"
 					},
 					"response": []
 				},
@@ -322,7 +322,7 @@
 						},
 						"method": "GET",
 						"header": [],
-						"url": "http://127.0.0.1:8000/admin/users/"
+						"url": "http://127.0.0.1:8000/admin_panel/users/"
 					},
 					"response": []
 				},
@@ -337,7 +337,7 @@
 						},
 						"method": "PATCH",
 						"header": [],
-						"url": "http://127.0.0.1:8000/admin/users/{id}/unban/"
+						"url": "http://127.0.0.1:8000/admin_panel/users/{id}/unban/"
 					},
 					"response": []
 				},
@@ -352,7 +352,7 @@
 						},
 						"method": "PATCH",
 						"header": [],
-						"url": "http://127.0.0.1:8000/admin/users/{id}/ban/"
+						"url": "http://127.0.0.1:8000/admin_panel/users/{id}/ban/"
 					},
 					"response": []
 				},
@@ -376,7 +376,7 @@
 								}
 							}
 						},
-						"url": "http://127.0.0.1:8000/admin/users"
+						"url": "http://127.0.0.1:8000/admin_panel/users"
 					},
 					"response": []
 				},
@@ -391,7 +391,7 @@
 						},
 						"method": "GET",
 						"header": [],
-						"url": "http://127.0.0.1:8000/admin/users/{id}/re_token/"
+						"url": "http://127.0.0.1:8000/admin_panel/users/{id}/re_token/"
 					},
 					"response": []
 				}

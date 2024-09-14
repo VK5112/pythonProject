@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
             name='UserProfile',
             fields=[
                 ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL)),
-                ('role', models.CharField(choices=[('admin', 'Admin'), ('manager', 'Manager')], default='manager', max_length=10)),
+                ('role', models.CharField(choices=[('admin_panel', 'Admin'), ('manager', 'Manager')], default='manager', max_length=10)),
                 ('first_name', models.CharField(max_length=150)),
                 ('last_name', models.CharField(max_length=150)),
             ],
