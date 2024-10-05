@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -56,6 +58,13 @@ class ActivateUserSerializer(serializers.Serializer):
 
     @staticmethod
     def validate_password(value):
-        if len(value) < 8:
-            raise serializers.ValidationError("Password must be at least 8 characters long.")
+        password_pattern = r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&^#])[A-Za-z\d@$!%*?&^#]{8,}$'
+
+        if not re.match(password_pattern, value):
+            raise serializers.ValidationError(
+                _(
+                    "Password must contain at least 8 characters, including at least one uppercase letter,"
+                    "one lowercase letter, one number, and one special character (@$!%*?&^#)."
+                )
+            )
         return value

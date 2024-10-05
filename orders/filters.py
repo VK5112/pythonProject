@@ -14,6 +14,7 @@ class OrderFilter(django_filters.FilterSet):
     sum = django_filters.NumberFilter()
     alreadyPaid = django_filters.NumberFilter()
     created_at = django_filters.DateFilter()
+    updated_at = django_filters.DateFilter()
     status = django_filters.CharFilter(lookup_expr='icontains')
     group = django_filters.CharFilter(lookup_expr='icontains')
     manager = django_filters.CharFilter(field_name='manager__first_name', lookup_expr='icontains')
@@ -21,4 +22,4 @@ class OrderFilter(django_filters.FilterSet):
     class Meta:
         model = OrderModel
         fields = ['name', 'surname', 'email', 'phone', 'age', 'course', 'course_format', 'course_type',
-                  'sum', 'alreadyPaid', 'created_at', 'status', 'group', 'manager']
+                  'sum', 'alreadyPaid', 'created_at', 'updated_at', 'status', 'group', 'manager']

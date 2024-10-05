@@ -1,8 +1,9 @@
+from datetime import timedelta
 from django.contrib.auth.models import User
 from django.db.models import Count
 from rest_framework import serializers, status
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import Token, TokenError
 
 from orders.models import OrderModel
 
@@ -62,11 +63,16 @@ def unban_user_service(user_id):
         return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
+class ActivationToken(Token):
+    token_type = 'activation'
+    lifetime = timedelta(minutes=30)
+
+
 def generate_activation_token_service(user_id):
     user = User.objects.get(pk=user_id)
     if not user.is_active:
-        refresh_token = RefreshToken.for_user(user)
-        return str(refresh_token)
+        activation_token = ActivationToken.for_user(user)
+        return str(activation_token)
     else:
         raise serializers.ValidationError("User is already active")
 
@@ -77,3 +83,24 @@ def handle_generate_token_or_error(user_id):
         return Response({"token": token}, status=status.HTTP_200_OK)
     except serializers.ValidationError as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def activate_user_service(token, password):
+    try:
+        activation_token = ActivationToken(token)
+        user_id = activation_token.get('user_id')
+
+        if not user_id:
+            raise serializers.ValidationError("Invalid token")
+
+        user = User.objects.get(id=user_id)
+
+        if user.is_active:
+            raise serializers.ValidationError("User is already active")
+
+        user.set_password(password)
+        user.is_active = True
+        user.save()
+
+    except TokenError:
+        raise serializers.ValidationError("Invalid or expired token")

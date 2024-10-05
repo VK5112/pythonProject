@@ -15,7 +15,7 @@ class OrderSerializer(serializers.ModelSerializer):
         model = OrderModel
         fields = [
             'id', 'name', 'surname', 'email', 'phone', 'age', 'course', 'course_format',
-            'course_type', 'sum', 'alreadyPaid', 'created_at', 'status', 'group', 'manager'
+            'course_type', 'sum', 'alreadyPaid', 'created_at', 'updated_at', 'status', 'group', 'manager'
         ]
         read_only_fields = ['comments']
 
@@ -49,3 +49,7 @@ class OrderSerializer(serializers.ModelSerializer):
         if value and value not in COURSE_TYPE_CHOICES:
             raise serializers.ValidationError(f'Course type must be one of {COURSE_TYPE_CHOICES}')
         return value
+
+
+class EmptySerializer(serializers.Serializer):
+    pass

@@ -1,4 +1,4 @@
-from rest_framework import permissions, serializers
+from rest_framework import permissions
 from rest_framework.generics import GenericAPIView
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.mixins import RetrieveModelMixin, ListModelMixin
@@ -8,7 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from .filters import OrderFilter
 from .models import OrderModel
-from .serializers import OrderSerializer
+from .serializers import OrderSerializer, EmptySerializer
 from .permissions import IsOrderManagerOrReadOnly
 from .services import (
     handle_partial_update_order, export_orders_to_excel_service,
@@ -32,10 +32,6 @@ class OrderModelViewSet(RetrieveModelMixin, ListModelMixin, GenericViewSet):
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         return handle_partial_update_order(instance, request.data)
-
-
-class EmptySerializer(serializers.Serializer):
-    pass
 
 
 class OrderExcelExportView(GenericAPIView):

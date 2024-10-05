@@ -8,8 +8,3 @@ class GroupSerializer(serializers.ModelSerializer):
         model = Group
         fields = ['id', 'name']
 
-    @staticmethod
-    def validate_name(value):
-        if Group.objects.filter(name=value).exists():
-            raise serializers.ValidationError("Group with this name already exists.")
-        return value

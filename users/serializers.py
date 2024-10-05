@@ -26,12 +26,22 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['email', 'is_staff', 'is_active', 'profile']
 
+    @staticmethod
+    def validate_email(value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return value
+
     def create(self, validated_data):
         profile_data = validated_data.pop('userprofile', {})
 
         username = get_random_string(10)
         while User.objects.filter(username=username).exists():
             username = get_random_string(10)
+
+        email = validated_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
 
         user = User.objects.create(username=username, **validated_data)
 

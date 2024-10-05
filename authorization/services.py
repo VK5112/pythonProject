@@ -4,10 +4,12 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from admin_panel.services import ActivationToken
+
 
 def activate_user_service(token, password):
-    refresh_token = RefreshToken(token)
-    user_id = refresh_token.get('user_id')
+    activation_token = ActivationToken(token)
+    user_id = activation_token.get('user_id')
 
     if not user_id:
         raise serializers.ValidationError("Invalid token")

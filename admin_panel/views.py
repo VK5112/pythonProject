@@ -1,9 +1,10 @@
-from rest_framework import status, serializers
+from rest_framework import status, serializers, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from authorization.serializers import ActivateUserSerializer
 from .services import get_order_statistics_service, get_user_order_statistics_service, ban_user_service, \
-    unban_user_service, handle_generate_token_or_error
+    unban_user_service, handle_generate_token_or_error, activate_user_service
 from orders.permissions import IsAdminUserRole
 
 
@@ -52,3 +53,14 @@ class UserActivationTokenView(APIView):
     @staticmethod
     def get(request, id, *args, **kwargs):
         return handle_generate_token_or_error(id)
+
+
+class ActivateUserView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @staticmethod
+    def post(request, token, *args, **kwargs):
+        serializer = ActivateUserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        activate_user_service(token, serializer.validated_data["password"])
+        return Response({"detail": "User activated successfully"}, status=status.HTTP_200_OK)

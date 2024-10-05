@@ -22,8 +22,13 @@ def export_orders_to_excel_service(queryset):
     data = []
     for order in queryset:
         created_at = order.created_at
+        updated_at = order.updated_at
+
         if created_at is not None and created_at.tzinfo is not None:
             created_at = created_at.replace(tzinfo=None)
+
+        if updated_at is not None and updated_at.tzinfo is not None:
+            updated_at = updated_at.replace(tzinfo=None)
 
         data.append({
             'ID': order.id,
@@ -40,6 +45,7 @@ def export_orders_to_excel_service(queryset):
             'Already Paid': order.alreadyPaid,
             'Group': order.group,
             'Created At': created_at,
+            'Updated At': updated_at,
             'Manager': order.manager.first_name if order.manager else '',
         })
 
@@ -61,16 +67,12 @@ def export_orders_to_excel_service(queryset):
         column_letter = get_column_letter(column[0].column)
         for cell in column:
             try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(cell.value)
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
             except TypeError:
-                continue
+                pass
 
-        if column_letter == get_column_letter(df.columns.get_loc('Created At') + 1):
-            adjusted_width = max(20, max_length + 2)
-        else:
-            adjusted_width = max_length + 2
-
+        adjusted_width = max_length + 2
         ws.column_dimensions[column_letter].width = adjusted_width
 
     file_name = f'{uuid.uuid4()}.xlsx'
@@ -79,7 +81,6 @@ def export_orders_to_excel_service(queryset):
     wb.save(response)
 
     return response
-
 
 def handle_partial_update_order(instance, data):
     updated_data = update_order_service(instance, data)

@@ -20,6 +20,7 @@ class OrderModel(models.Model):
     sum = models.IntegerField(blank=True, null=True)
     alreadyPaid = models.IntegerField(default=0, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     utm = models.CharField(max_length=120, blank=True, null=True)
     msg = models.CharField(max_length=120, blank=True, null=True)
     status = models.CharField(max_length=20, null=True, blank=True)
